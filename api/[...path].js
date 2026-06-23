@@ -1,21 +1,25 @@
 const https  = require('https');
 const crypto = require('crypto');
 
-// API keys come from Vercel environment variables — never in the browser
 const ETORO_HOST = 'public-api.etoro.com';
 const GROQ_HOST  = 'api.groq.com';
 
 module.exports = async function handler(req, res) {
-  const url = req.url; // e.g. /api/groq/... or /api/v1/...
+  // req.query.path is the catch-all array, e.g. ['groq','openai','v1','chat','completions']
+  // or ['v1','user-info','people','search']
+  const segments    = Array.isArray(req.query.path) ? req.query.path : [req.query.path].filter(Boolean);
+  const queryString = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
 
-  if (url.startsWith('/api/groq/')) {
-    const groqPath = url.replace('/api/groq', '');
+  if (segments[0] === 'groq') {
+    // /api/groq/openai/v1/... → forward to api.groq.com/openai/v1/...
+    const groqPath = '/' + segments.slice(1).join('/');
     await proxyTo(req, res, GROQ_HOST, groqPath, {
       'content-type':  'application/json',
       'authorization': `Bearer ${process.env.GROQ_KEY}`,
     });
   } else {
-    const etoroPath = url.replace('/api', '');
+    // /api/v1/user-info/... → forward to public-api.etoro.com/v1/user-info/...
+    const etoroPath = '/' + segments.join('/') + queryString;
     await proxyTo(req, res, ETORO_HOST, etoroPath, {
       'x-api-key':    process.env.ETORO_KEY,
       'x-user-key':   process.env.ETORO_UKEY,
