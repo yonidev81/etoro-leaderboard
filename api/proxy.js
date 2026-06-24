@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
       'authorization': `Bearer ${process.env.GROQ_KEY}`,
     });
   } else {
-    const etoroPath = '/' + segments.join('/') + queryString;
+    const etoroPath = '/api/' + segments.join('/') + queryString;
     await proxyTo(req, res, ETORO_HOST, etoroPath, {
       'x-api-key':    process.env.ETORO_KEY,
       'x-user-key':   process.env.ETORO_UKEY,
